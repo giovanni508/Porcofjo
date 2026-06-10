@@ -37,6 +37,8 @@ export default function Wizard({ onGenerate }: { onGenerate: (brief: Brief) => v
   const [brief, setBrief] = useState<Brief>(emptyBrief);
   const [colorDraft, setColorDraft] = useState('#1f6feb');
   const [imageDraft, setImageDraft] = useState('');
+  const [extracting, setExtracting] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const logoInput = useRef<HTMLInputElement>(null);
 
@@ -58,8 +60,29 @@ export default function Wizard({ onGenerate }: { onGenerate: (brief: Brief) => v
     step === 0 ? brief.copy.trim().length >= 20 : true;
 
   async function onCopyFile(file: File) {
-    const text = await file.text();
-    set({ copy: text });
+    setFileError(null);
+    const name = file.name.toLowerCase();
+
+    // I formati di testo semplice si leggono direttamente nel browser
+    if (name.endsWith('.txt') || name.endsWith('.md')) {
+      set({ copy: await file.text() });
+      return;
+    }
+
+    // Word (.docx) e PDF vengono estratti lato server
+    setExtracting(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/extract', { method: 'POST', body: fd });
+      const j = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(j?.error || `Errore ${res.status}`);
+      set({ copy: j.text });
+    } catch (err) {
+      setFileError(err instanceof Error ? err.message : 'Impossibile leggere il file');
+    } finally {
+      setExtracting(false);
+    }
   }
 
   async function onLogoFile(file: File) {
@@ -107,18 +130,22 @@ export default function Wizard({ onGenerate }: { onGenerate: (brief: Brief) => v
             />
           </label>
           <div className="row" style={{ marginTop: 10 }}>
-            <button className="btn sm" onClick={() => fileInput.current?.click()}>
-              📄 Carica file (.txt / .md)
+            <button className="btn sm" onClick={() => fileInput.current?.click()} disabled={extracting}>
+              {extracting ? <><span className="spinner" /> Estraggo il testo…</> : '📄 Carica file (Word / PDF / txt / md)'}
             </button>
             <input
               ref={fileInput}
               type="file"
-              accept=".txt,.md,text/plain,text/markdown"
+              accept=".txt,.md,.docx,.pdf,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               hidden
-              onChange={(e) => e.target.files?.[0] && onCopyFile(e.target.files[0])}
+              onChange={(e) => {
+                if (e.target.files?.[0]) onCopyFile(e.target.files[0]);
+                e.target.value = '';
+              }}
             />
             <span className="hint" style={{ margin: 0 }}>{brief.copy.trim().length} caratteri</span>
           </div>
+          {fileError && <div className="alert error">{fileError}</div>}
         </div>
       )}
 
