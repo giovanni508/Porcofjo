@@ -23,12 +23,19 @@ npm install
 npm run dev            # http://localhost:3000
 ```
 
-### Variabili d'ambiente
+### Provider AI (a scelta, anche gratuiti)
 
-| Variabile | Descrizione |
-|---|---|
-| `ANTHROPIC_API_KEY` | Obbligatoria. Chiave API Anthropic. |
-| `LAMPO_MODEL` | Opzionale. Default `claude-opus-4-8`. |
+Dal pannello **⚙️ AI** dell'interfaccia puoi scegliere il motore di generazione e inserire la relativa chiave (resta nel browser). In alternativa configura le chiavi come variabili d'ambiente sul server:
+
+| Provider | Variabile | Costo | Chiave |
+|---|---|---|---|
+| Claude (Anthropic) — qualità massima | `ANTHROPIC_API_KEY` | a pagamento | platform.claude.com |
+| Google Gemini | `GEMINI_API_KEY` | **gratis** (free tier) | aistudio.google.com/apikey |
+| Groq (Llama) | `GROQ_API_KEY` | **gratis** (free tier) | console.groq.com/keys |
+| OpenRouter (modelli `:free`) | `OPENROUTER_API_KEY` | **gratis** (modelli free) | openrouter.ai/keys |
+| Endpoint custom compatibile OpenAI | `CUSTOM_AI_API_KEY` | dipende | — |
+
+Il modello è personalizzabile per ogni provider (campo "Modello" nel pannello).
 
 ## Integrazione GoHighLevel
 

@@ -1,7 +1,5 @@
 import type { Brief, Complexity } from './types';
 
-export const MODEL = process.env.LAMPO_MODEL || 'claude-opus-4-8';
-
 const COMPLEXITY_SPECS: Record<Complexity, string> = {
   1: `LIVELLO 1 — ESSENZIALE. Design pulitissimo e minimale. Niente animazioni eccetto micro-transizioni hover (≤200ms) su bottoni e link. Gerarchia tipografica forte, tanto spazio bianco, zero decorazioni superflue. La qualità deve emergere da tipografia, spaziatura e ritmo verticale impeccabili.`,
   2: `LIVELLO 2 — RAFFINATO. Transizioni dolci e reveal-on-scroll leggeri (fade/slide-up via IntersectionObserver). Hover states curati, bottoni con feedback tattile. Nessun effetto vistoso: eleganza discreta.`,

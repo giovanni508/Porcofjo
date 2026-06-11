@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { loadAiSettings } from '@/lib/ai';
 import { injectEditorRuntime } from '@/lib/editor-runtime';
 import { cleanGeneratedHtml, downloadFile, extractStreamError, slugify } from '@/lib/html';
 import GhlPanel from './GhlPanel';
@@ -150,7 +151,7 @@ export default function Editor({
       const res = await fetch('/api/revise', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ html: current, instruction: text }),
+        body: JSON.stringify({ html: current, instruction: text, ai: loadAiSettings() }),
       });
       if (!res.ok || !res.body) {
         const j = await res.json().catch(() => null);

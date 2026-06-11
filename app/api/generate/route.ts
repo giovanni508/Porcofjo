@@ -1,5 +1,6 @@
 import { buildGenerationSystemPrompt, buildGenerationUserPrompt } from '@/lib/prompts';
-import { streamClaudeText } from '@/lib/stream';
+import { streamAiText } from '@/lib/stream';
+import type { AiSettings } from '@/lib/ai';
 import type { Brief } from '@/lib/types';
 
 export const runtime = 'nodejs';
@@ -8,14 +9,15 @@ export const runtime = 'nodejs';
 export const maxDuration = 300;
 
 export async function POST(req: Request) {
-  let brief: Brief;
+  let body: { brief?: Brief; ai?: AiSettings };
   try {
-    brief = (await req.json()) as Brief;
+    body = await req.json();
   } catch {
     return Response.json({ error: 'Body JSON non valido' }, { status: 400 });
   }
+  const brief = body.brief;
   if (!brief?.copy?.trim()) {
     return Response.json({ error: 'Il copy è obbligatorio' }, { status: 400 });
   }
-  return streamClaudeText(buildGenerationSystemPrompt(), buildGenerationUserPrompt(brief));
+  return streamAiText(buildGenerationSystemPrompt(), buildGenerationUserPrompt(brief), body.ai);
 }

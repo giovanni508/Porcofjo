@@ -1,8 +1,10 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Wizard from '@/components/Wizard';
 import Editor from '@/components/Editor';
+import AiSettingsPanel from '@/components/AiSettingsPanel';
+import { DEFAULT_AI, PROVIDERS, loadAiSettings, type AiSettings } from '@/lib/ai';
 import { cleanGeneratedHtml, extractStreamError } from '@/lib/html';
 import type { Brief } from '@/lib/types';
 
@@ -10,6 +12,10 @@ type Phase = 'wizard' | 'generating' | 'editor';
 
 export default function Home() {
   const [phase, setPhase] = useState<Phase>('wizard');
+  const [ai, setAi] = useState<AiSettings>(DEFAULT_AI);
+  const [aiPanelOpen, setAiPanelOpen] = useState(false);
+
+  useEffect(() => setAi(loadAiSettings()), []);
   const [html, setHtml] = useState('');
   const [pageTitle, setPageTitle] = useState('landing-page');
   const [genBytes, setGenBytes] = useState(0);
@@ -31,7 +37,7 @@ export default function Home() {
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(brief),
+        body: JSON.stringify({ brief, ai }),
         signal: controller.signal,
       });
       if (!res.ok || !res.body) {
@@ -91,7 +97,14 @@ export default function Home() {
           <span className="bolt">⚡</span> LAMPO <small>· AI Landing Page Builder</small>
         </div>
         <div className="spacer" />
+        <button className="btn sm" onClick={() => setAiPanelOpen(true)} title="Scegli il motore AI">
+          ⚙️ {PROVIDERS[ai.provider].label.split(' ')[0]}
+        </button>
       </div>
+
+      {aiPanelOpen && (
+        <AiSettingsPanel settings={ai} onChange={setAi} onClose={() => setAiPanelOpen(false)} />
+      )}
 
       {phase === 'wizard' && (
         <>
