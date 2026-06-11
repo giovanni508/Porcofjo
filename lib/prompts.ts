@@ -29,7 +29,8 @@ STRUTTURA E QUALITÀ TECNICA:
 const COPY_RULES = `
 REGOLE SUL COPY (priorità assoluta):
 - Il COPY fornito dall'utente è SACRO: va usato PAROLA PER PAROLA, senza riscrivere, parafrasare, accorciare, tradurre o aggiungere claim di marketing inventati.
-- Puoi solo: distribuire il copy nelle sezioni appropriate, scegliere quali frasi sono titoli/sottotitoli/body/CTA in base alla loro funzione evidente, e aggiungere micro-testo funzionale di interfaccia (label di form, testo di navigazione, footer legale generico) quando indispensabile.
+- Il copy può contenere formattazione Markdown che rispecchia la struttura del documento originale: RISPETTALA. I titoli (#, ##, ###) sono la gerarchia di titoli e sottotitoli della pagina, i **grassetti** vanno resi con enfasi visiva, gli elenchi restano elenchi, i link restano link. I marcatori Markdown non vanno mai mostrati come testo: vanno tradotti nella corrispondente struttura HTML.
+- Puoi solo: distribuire il copy nelle sezioni appropriate, scegliere quali frasi sono titoli/sottotitoli/body/CTA in base alla loro funzione evidente (e alla gerarchia del documento), e aggiungere micro-testo funzionale di interfaccia (label di form, testo di navigazione, footer legale generico) quando indispensabile.
 - Ogni frase del copy fornito deve comparire nella pagina. Niente lorem ipsum, niente testo riempitivo inventato.`;
 
 export function buildGenerationSystemPrompt(): string {

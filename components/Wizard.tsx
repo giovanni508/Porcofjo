@@ -118,7 +118,9 @@ export default function Wizard({ onGenerate }: { onGenerate: (brief: Brief) => v
           <h2>1 · Il tuo Copy</h2>
           <p className="hint">
             Incolla il copy completo della pagina. Verrà usato <b>parola per parola</b>, senza
-            riscritture: l’AI deciderà solo come distribuirlo e metterlo in scena.
+            riscritture: l’AI deciderà solo come distribuirlo e metterlo in scena. Se carichi un
+            file Word, la formattazione originale (titoli, grassetti, elenchi) viene preservata e
+            rispettata nella pagina.
           </p>
           <label className="field">
             <span>Copy della landing <em>(obbligatorio, min. 20 caratteri)</em></span>

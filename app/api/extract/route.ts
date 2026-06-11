@@ -29,8 +29,18 @@ export async function POST(req: Request) {
     let text = '';
 
     if (name.endsWith('.docx') || file.type.includes('officedocument.wordprocessingml')) {
-      const result = await mammoth.extractRawText({ buffer });
-      text = result.value;
+      // Markdown: preserva la formattazione del documento originale
+      // (titoli, grassetti, corsivi, elenchi, link).
+      // convertToMarkdown è deprecato e assente dai tipi, ma pienamente funzionante.
+      const convertToMarkdown = (mammoth as unknown as {
+        convertToMarkdown: (input: { buffer: Buffer }) => Promise<{ value: string }>;
+      }).convertToMarkdown;
+      const result = await convertToMarkdown({ buffer });
+      text = result.value
+        // mammoth esce con escape aggressivi (\- \. \#) che sporcano il copy
+        .replace(/\\([#\-.*_[\]()>])/g, '$1')
+        // titoli markdown: assicura una riga vuota prima per leggibilità
+        .replace(/\n(#{1,6} )/g, '\n\n$1');
     } else if (name.endsWith('.pdf') || file.type === 'application/pdf') {
       // unpdf è pensato per ambienti serverless: import lazy così un eventuale
       // problema del modulo PDF non blocca gli altri formati
