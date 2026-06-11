@@ -24,7 +24,8 @@ STRUTTURA E QUALITÀ TECNICA:
 - Form funzionanti visivamente (con validazione HTML5) dove il copy prevede una CTA di contatto/lead.
 - Accessibilità: alt text, aria-label dove serve, prefers-reduced-motion rispettato per ogni animazione.
 - Performance: niente librerie esterne, JS vanilla, lazy-loading immagini, animazioni solo transform/opacity.
-- Se non sono fornite immagini, crea visual con CSS puro (gradient mesh, forme, pattern, SVG inline) — MAI placeholder grigi o link a immagini inesistenti.`;
+- Se non sono fornite immagini, crea visual con CSS puro (gradient mesh, forme, pattern, SVG inline) — MAI placeholder grigi o link a immagini inesistenti.
+- Budget di dimensione: l'intero file HTML deve restare indicativamente entro 60KB. Ottieni ricchezza visiva con CSS efficiente e riutilizzabile (classi condivise, custom properties), non con ripetizioni: niente blocchi di stile duplicati, niente commenti prolissi.`;
 
 const COPY_RULES = `
 REGOLE SUL COPY (priorità assoluta):
