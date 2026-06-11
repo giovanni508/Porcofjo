@@ -98,10 +98,18 @@ function streamOpenAiCompat(
 
   type Msg = { role: 'system' | 'user' | 'assistant'; content: string };
 
+  type ReqResult = {
+    text: string;
+    finish: string | null;
+    error?: string;
+    status?: number;
+    retrySec?: number;
+  };
+
   async function requestOnce(
     messages: Msg[],
     controller: ReadableStreamDefaultController<Uint8Array>,
-  ): Promise<{ text: string; finish: string | null; error?: string }> {
+  ): Promise<ReqResult> {
     const res = await fetch(`${baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
@@ -123,11 +131,23 @@ function streamOpenAiCompat(
 
     if (!res.ok || !res.body) {
       let detail = `HTTP ${res.status}`;
+      let retrySec: number | undefined;
       try {
-        const j = await res.json();
-        detail += ` — ${j?.error?.message || JSON.stringify(j).slice(0, 300)}`;
-      } catch { /* corpo non JSON */ }
-      return { text: '', finish: null, error: detail };
+        const raw = await res.text();
+        // Estrae l'attesa suggerita dal provider (header standard o RetryInfo di Google)
+        const headerRetry = Number(res.headers.get('retry-after'));
+        if (Number.isFinite(headerRetry) && headerRetry > 0) retrySec = headerRetry;
+        const m = raw.match(/"retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s"/);
+        if (m) retrySec = Math.ceil(Number(m[1]));
+        try {
+          const j = JSON.parse(raw);
+          const errObj = Array.isArray(j) ? j[0]?.error : j?.error;
+          detail += ` — ${errObj?.message || raw.slice(0, 300)}`;
+        } catch {
+          detail += ` — ${raw.slice(0, 300)}`;
+        }
+      } catch { /* corpo illeggibile */ }
+      return { text: '', finish: null, error: detail, status: res.status, retrySec };
     }
 
     const reader = res.body.getReader();
@@ -163,6 +183,40 @@ function streamOpenAiCompat(
     return { text, finish };
   }
 
+  /** Una richiesta con retry automatico sui limiti di frequenza brevi (429). */
+  async function requestWithRetry(
+    messages: Msg[],
+    controller: ReadableStreamDefaultController<Uint8Array>,
+  ): Promise<ReqResult> {
+    let result = await requestOnce(messages, controller);
+    let attempts = 0;
+    // Riprova fino a 2 volte se l'attesa suggerita è breve (limite al minuto,
+    // non quota giornaliera). Budget massimo di attesa ~90s per non sforare
+    // il tempo della funzione serverless.
+    while (result.status === 429 && attempts < 2) {
+      const wait = result.retrySec ?? 20;
+      if (wait > 45) break;
+      await new Promise((r) => setTimeout(r, (wait + 2) * 1000));
+      attempts++;
+      result = await requestOnce(messages, controller);
+    }
+    return result;
+  }
+
+  function friendlyError(result: ReqResult): string {
+    if (result.status === 429) {
+      const waitHint = result.retrySec && result.retrySec <= 3600
+        ? ` Il provider suggerisce di riattendere ~${result.retrySec > 60 ? Math.ceil(result.retrySec / 60) + ' minuti' : result.retrySec + ' secondi'}.`
+        : '';
+      return (
+        'Limite del piano gratuito raggiunto per questo provider (HTTP 429), ho già riprovato senza successo.' +
+        waitHint +
+        ' Soluzioni: attendi e riprova, oppure apri ⚙️ AI e passa a un altro provider gratuito — le quote sono separate (es. Groq se stavi usando Gemini, o viceversa).'
+      );
+    }
+    return result.error ?? 'Errore sconosciuto dal provider AI.';
+  }
+
   const readable = new ReadableStream<Uint8Array>({
     async start(controller) {
       try {
@@ -171,7 +225,7 @@ function streamOpenAiCompat(
           { role: 'user', content: userPrompt },
         ];
 
-        let result = await requestOnce(baseMessages, controller);
+        let result = await requestWithRetry(baseMessages, controller);
         let accumulated = result.text;
         let rounds = 0;
 
@@ -195,13 +249,13 @@ function streamOpenAiCompat(
                 'senza commenti, senza blocchi markdown. Completa il documento fino a </html>.',
             },
           ];
-          result = await requestOnce(contMessages, controller);
+          result = await requestWithRetry(contMessages, controller);
           if (!result.text) break;
           accumulated += result.text;
         }
 
         if (result.error) {
-          controller.enqueue(encoder.encode(errorChunk(result.error)));
+          controller.enqueue(encoder.encode(errorChunk(friendlyError(result))));
         } else if (result.finish === 'length' && !/<\/html>\s*$/i.test(accumulated)) {
           controller.enqueue(encoder.encode(errorChunk(
             'output troncato dal modello anche dopo i tentativi di continuazione: prova un modello con più output (es. Gemini) o un brief più corto.',
