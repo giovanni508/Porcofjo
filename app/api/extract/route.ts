@@ -1,5 +1,4 @@
 import mammoth from 'mammoth';
-import { PDFParse } from 'pdf-parse';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120;
@@ -33,13 +32,11 @@ export async function POST(req: Request) {
       const result = await mammoth.extractRawText({ buffer });
       text = result.value;
     } else if (name.endsWith('.pdf') || file.type === 'application/pdf') {
-      const parser = new PDFParse({ data: buffer });
-      try {
-        const result = await parser.getText();
-        text = result.text;
-      } finally {
-        await parser.destroy().catch(() => {});
-      }
+      // unpdf è pensato per ambienti serverless: import lazy così un eventuale
+      // problema del modulo PDF non blocca gli altri formati
+      const { extractText } = await import('unpdf');
+      const result = await extractText(new Uint8Array(buffer), { mergePages: true });
+      text = result.text;
     } else if (name.endsWith('.txt') || name.endsWith('.md') || file.type.startsWith('text/')) {
       text = buffer.toString('utf-8');
     } else if (name.endsWith('.doc')) {
