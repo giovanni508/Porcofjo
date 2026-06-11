@@ -3,7 +3,9 @@ import { streamClaudeText } from '@/lib/stream';
 import type { Brief } from '@/lib/types';
 
 export const runtime = 'nodejs';
-export const maxDuration = 600;
+// Limite del piano Vercel Hobby; la generazione è in streaming quindi la
+// connessione resta viva per tutta la durata della funzione
+export const maxDuration = 300;
 
 export async function POST(req: Request) {
   let brief: Brief;

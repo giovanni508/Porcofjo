@@ -2,7 +2,8 @@ import { buildRevisionSystemPrompt, buildRevisionUserPrompt } from '@/lib/prompt
 import { streamClaudeText } from '@/lib/stream';
 
 export const runtime = 'nodejs';
-export const maxDuration = 600;
+// Limite del piano Vercel Hobby (vedi app/api/generate/route.ts)
+export const maxDuration = 300;
 
 export async function POST(req: Request) {
   let body: { html?: string; instruction?: string };
